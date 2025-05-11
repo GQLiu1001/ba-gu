@@ -1341,3 +1341,202 @@ a.equals(c) 返回true (比较的是对象属性) (前提看Dog类是否用的Ob
 d==e 返回true(自动拆箱成int)（`==` 对于基本数据类型比较的是它们的值）
 
 e.equals(d) 返回true (`Integer` 类的 `equals()` 方法会比较所包装的数值。`d` (值为2) 与 `e` 所包装的数值 (2) 相等。在 `equals` 方法内部，如果传入的是 `int`，它会被视为与 `Integer` 对象内部的 `int` 值进行比较。)
+
+# 设计模式
+
+设计模式通常分为三大类：
+
+1. **创建型模式 (Creational Patterns)**：与对象的创建有关，旨在以灵活和解耦的方式创建对象。
+2. **结构型模式 (Structural Patterns)**：处理类和对象的组合，以形成更大的结构。
+3. **行为型模式 (Behavioral Patterns)**：关注对象之间的职责分配和通信。
+
+**创建型模式 (Creational Patterns)** - 共 5 种
+
+1. **单例模式 (Singleton Pattern)**
+   - **介绍**：确保一个类只有一个实例，并提供一个全局访问点来获取这个唯一的实例。
+   - **例子**：你提到的 MyBatis 中的 `ErrorContext` 和 `LogFactory`，以及常见的数据库连接池、应用程序的配置对象等。
+2. **工厂方法模式 (Factory Method Pattern)**
+   - **介绍**：定义一个用于创建对象的接口，但让子类决定实例化哪一个类。工厂方法使一个类的实例化延迟到其子类。
+   - **例子**：JDBC 中的 `Connection.createStatement()`，集合框架中的迭代器 `iterator()` 方法。
+3. **抽象工厂模式 (Abstract Factory Pattern)**
+   - **介绍**：提供一个接口，用于创建一系列相关或相互依赖的对象，而无需指定它们具体的类。
+   - **例子**：更换UI主题（如同时更换按钮、文本框、窗口的风格），数据库访问层切换不同数据库（如`SQL ServerFactory`、`OracleFactory`）。
+4. **建造者模式 (Builder Pattern)**
+   - **介绍**：将一个复杂对象的构建与其表示分离，使得同样的构建过程可以创建不同的表示。它一步一步创建一个复杂的对象，允许用户只通过指定复杂对象的类型和内容就可以构建它们，用户不需要知道内部的具体构建细节。
+   - **例子**：你提到的 MyBatis 中的 `SqlSessionFactoryBuilder`、`XMLConfigBuilder` 等，以及 `StringBuilder`、`DocumentBuilder`。
+5. **原型模式 (Prototype Pattern)**
+   - **介绍**：用原型实例指定创建对象的种类，并且通过拷贝这些原型创建新的对象。当直接创建对象的代价比较大时，则采用这种模式。
+   - **例子**：`Object.clone()` 方法（尽管Java中的 `clone()` 有其复杂性），需要创建大量相似对象，如细胞分裂。
+
+**结构型模式 (Structural Patterns)** - 共 7 种
+
+1. **适配器模式 (Adapter Pattern)**
+   - **介绍**：将一个类的接口转换成客户希望的另外一个接口。适配器模式使得原本由于接口不兼容而不能一起工作的那些类可以一起工作。
+   - **例子**：你提到的 MyBatis 中 Log 接口的适配，`java.io.InputStreamReader(InputStream)` (将字节流适配成字符流)，`java.util.Arrays.asList()`。
+2. **桥接模式 (Bridge Pattern)**
+   - **介绍**：将抽象部分与它的实现部分分离，使它们都可以独立地变化。它通过提供抽象化和实现化之间的桥接结构，来实现二者的解耦。
+   - **例子**：JDBC 驱动程序，不同品牌的汽车（抽象）和不同类型的引擎（实现）可以自由组合。
+3. **组合模式 (Composite Pattern)**
+   - **介绍**：将对象组合成树形结构以表示“部分-整体”的层次结构。组合模式使得用户对单个对象和组合对象的使用具有一致性。
+   - **例子**：你提到的 MyBatis 中的 `SqlNode`，图形用户界面中的窗口和容器，文件系统中的文件和文件夹。
+4. **装饰者模式 (Decorator Pattern)**
+   - **介绍**：动态地给一个对象添加一些额外的职责。就增加功能来说，装饰者模式相比生成子类更为灵活。
+   - **例子**：你提到的 MyBatis 中 Cache 的装饰者，Java I/O 中的 `BufferedInputStream(FileInputStream)`，`Collections.synchronizedList()`。
+5. **外观模式 (Facade Pattern)**
+   - **介绍**：为子系统中的一组接口提供一个一致的界面，外观模式定义了一个高层接口，这个接口使得这一子系统更加容易使用。
+   - **例子**：JDBC 中的 `DriverManager.getConnection()` (背后隐藏了驱动加载、连接建立等复杂性)，SLF4J 作为一个日志门面。
+6. **享元模式 (Flyweight Pattern)**
+   - **介绍**：运用共享技术有效地支持大量细粒度的对象，以减少内存占用和提高性能。它通过共享不变的部分，将变化的部分作为外部状态传入。
+   - **例子**：Java 中的 `String` 常量池，数据库连接池中的连接对象，围棋的棋子。
+7. **代理模式 (Proxy Pattern)**
+   - **介绍**：为其他对象提供一种代理以控制对这个对象的访问。
+   - **例子**：你提到的 MyBatis 中 `MapperProxy` 和 `ConnectionLogger` (JDK动态代理)，Spring AOP 中的代理，Hibernate 的延迟加载，RPC (远程过程调用)。
+
+**行为型模式 (Behavioral Patterns)** - 共 11 种
+
+1. **责任链模式 (Chain of Responsibility Pattern)**
+   - **介绍**：为请求创建了一个接收者对象的链。这种模式使得请求的发送者和接收者进行解耦。请求沿着链传递，直到有一个对象处理它为止。
+   - **例子**：Java Web 中的 Filter 链，Servlet 的 `doFilter`，异常处理机制。
+2. **命令模式 (Command Pattern)**
+   - **介绍**：将一个请求封装为一个对象，从而使你可用不同的请求对客户进行参数化；对请求排队或记录请求日志，以及支持可撤销的操作。
+   - **例子**：线程池中的 `Runnable` 接口，GUI 中的按钮点击事件处理，事务操作。
+3. **解释器模式 (Interpreter Pattern)**
+   - **介绍**：给定一个语言，定义它的文法的一种表示，并定义一个解释器，这个解释器使用该表示来解释语言中的句子。
+   - **例子**：正则表达式引擎 (`java.util.regex.Pattern`)，SQL 解析器，编译器中的语法分析。
+4. **迭代器模式 (Iterator Pattern)**
+   - **介绍**：提供一种方法顺序访问一个聚合对象中各个元素, 而又无须暴露该对象的内部表示。
+   - **例子**：你提到的 `PropertyTokenizer`，Java 集合框架中的 `Iterator` 接口。
+5. **中介者模式 (Mediator Pattern)**
+   - **介绍**：用一个中介对象来封装一系列的对象交互。中介者使各个对象不需要显式地相互引用，从而使其耦合松散，而且可以独立地改变它们之间的交互。
+   - **例子**：`java.util.Timer` (调度任务)，GUI 中的对话框与各组件的协调，聊天室。
+6. **备忘录模式 (Memento Pattern)**
+   - **介绍**：在不破坏封装性的前提下，捕获一个对象的内部状态，并在该对象之外保存这个状态。这样以后就可将该对象恢复到原先保存的状态。
+   - **例子**：文本编辑器的撤销/重做功能，游戏存档。
+7. **观察者模式 (Observer Pattern)**
+   - **介绍**：定义对象间的一种一对多的依赖关系，当一个对象的状态发生改变时，所有依赖于它的对象都得到通知并被自动更新。也称为发布-订阅模式。
+   - **例子**：Java中的 `java.util.Observer` 和 `java.util.Observable` (已废弃，推荐使用 `PropertyChangeListener` 或其他事件机制)，GUI 中的事件监听器 (如 `ActionListener`)，消息队列。
+8. **状态模式 (State Pattern)**
+   - **介绍**：允许一个对象在其内部状态改变时改变它的行为。对象看起来似乎修改了它的类。
+   - **例子**：TCP 连接的状态（建立连接、监听、关闭等），订单状态流转。
+9. **策略模式 (Strategy Pattern)**
+   - **介绍**：定义一系列的算法,把它们一个个封装起来, 并且使它们可相互替换。本模式使得算法可独立于使用它的客户而变化。
+   - **例子**：`java.util.Comparator` 接口（用于 `Collections.sort()`），不同的支付方式，不同的压缩算法。
+10. **模板方法模式 (Template Method Pattern)**
+    - **介绍**：在一个方法中定义一个算法的骨架，而将一些步骤延迟到子类中。模板方法使得子类可以不改变一个算法的结构即可重定义该算法的某些特定步骤。
+    - **例子**：你提到的 MyBatis 中的 `BaseExecutor` 和 `BaseTypeHandler`，`HttpServlet` 中的 `doGet()`、`doPost()` 方法，`AbstractList` 中的一些通用方法。
+11. **访问者模式 (Visitor Pattern)**
+    - **介绍**：表示一个作用于某对象结构中的各元素的操作。它使你可以在不改变各元素的类的前提下定义作用于这些元素的新操作。
+    - **例子**：编译器中对抽象语法树（AST）的不同处理阶段（如类型检查、代码生成），对复杂对象结构（如XML文档）执行多种不同的操作。
+
+# 工厂模式BeanFactory
+
+**工厂模式的核心思想：**
+
+- **封装对象的创建过程**：将创建对象的具体逻辑（使用哪个类、如何初始化等）放到一个单独的“工厂”中。
+- **解耦**：调用者（客户端代码）不需要知道它所使用的对象的具体实现类是什么，只需要知道它需要什么类型（接口或抽象类）的对象。这使得更换或添加新的具体实现变得容易，而不需要修改客户端代码。
+- **提高灵活性和可维护性**：当创建逻辑复杂或需要根据不同条件创建不同对象时，工厂模式能让代码更清晰、更易于管理。
+
+**常见的工厂模式变体：**
+
+1. **简单工厂模式 (Simple Factory Pattern)**：一个工厂类，根据传入的参数来决定创建哪种产品类的实例。严格来说，它不属于 GoF 23 种设计模式之一，但非常常用。
+
+   Java
+
+   ```
+   // 简单工厂
+   public class ToyFactory {
+       public static Toy createToy(String type) {
+           if ("car".equals(type)) {
+               return new ToyCar();
+           } else if ("doll".equals(type)) {
+               return new ToyDoll();
+           }
+           return null;
+       }
+   }
+   // 客户端
+   Toy myCar = ToyFactory.createToy("car");
+   ```
+
+2. **工厂方法模式 (Factory Method Pattern)**：定义一个用于创建对象的接口（工厂接口），但让实现该接口的子类（具体工厂）来决定实例化哪一个类。这使得一个类的实例化延迟到其子类。
+
+   Java
+
+   ```
+   // 抽象产品
+   interface Toy {}
+   class ToyCar implements Toy {}
+   // 抽象工厂
+   interface ToyFactory {
+       Toy createToy();
+   }
+   // 具体工厂
+   class CarFactory implements ToyFactory {
+       public Toy createToy() {
+           return new ToyCar();
+       }
+   }
+   // 客户端
+   ToyFactory carFactory = new CarFactory();
+   Toy myCar = carFactory.createToy();
+   ```
+
+3. **抽象工厂模式 (Abstract Factory Pattern)**：提供一个接口，用于创建一系列相关或相互依赖的对象，而无需指定它们具体的类。这个工厂能生产一“族”产品。
+
+   Java
+
+   ```
+   // 假设有两种产品：车和娃娃，每种产品都有现代款和复古款
+   interface Car extends Toy {}
+   class ModernCar implements Car {}
+   class VintageCar implements Car {}
+   
+   interface Doll extends Toy {}
+   class ModernDoll implements Doll {}
+   class VintageDoll implements Doll {}
+   
+   // 抽象工厂 - 能生产一套风格的产品
+   interface AbstractToyFactory {
+       Car createCar();
+       Doll createDoll();
+   }
+   // 具体工厂 - 生产现代风格的产品
+   class ModernToyFactory implements AbstractToyFactory {
+       public Car createCar() { return new ModernCar(); }
+       public Doll createDoll() { return new ModernDoll(); }
+   }
+   // 客户端
+   AbstractToyFactory modernFactory = new ModernToyFactory();
+   Car modernCar = modernFactory.createCar();
+   Doll modernDoll = modernFactory.createDoll();
+   ```
+
+**Spring 中的 `BeanFactory` 是什么？**
+
+`BeanFactory` 是 Spring 框架的**核心接口**，它是 Spring IoC (Inversion of Control，控制反转) 容器的基础。你可以把它看作是一个**超级智能、高度可配置的“超级工厂”**。
+
+**`BeanFactory` 的主要职责和特性：**
+
+1. **Bean 的工厂和管理者**：
+   - 它负责创建、配置和管理应用程序中的对象（在 Spring 中称为 "Bean"）。
+   - 你不再需要自己去 `new` 对象，而是告诉 `BeanFactory` 你需要哪个 Bean，它会为你提供该 Bean 的实例。
+2. **IoC (控制反转) 的体现**：
+   - 传统的对象创建和依赖关系是由开发者在代码中直接控制的（比如 `A a = new A(); B b = new B(a);`）。
+   - 使用 `BeanFactory` 后，对象的创建权和依赖关系的注入权都**反转**给了 Spring 容器。开发者只需要声明需要什么（比如通过 XML 配置或注解），容器会负责组装。
+3. **依赖注入 (Dependency Injection - DI)**：
+   - `BeanFactory` 不仅创建 Bean，还能自动解决 Bean 之间的依赖关系。例如，如果你的 `OrderService` Bean 需要一个 `OrderRepository` Bean，`BeanFactory` 会在创建 `OrderService` 时，自动将一个 `OrderRepository` 的实例“注入”进去。
+4. **Bean 的生命周期管理**：
+   - 从 Bean 的定义、实例化、属性填充、初始化（调用初始化回调方法如 `@PostConstruct` 或 `afterPropertiesSet()`），到最终的销毁（调用销毁回调方法如 `@PreDestroy` 或 `destroy()`），`BeanFactory` 管理着 Bean 的整个生命周期。
+5. **配置驱动**：
+   - `BeanFactory` 通过读取配置元数据（通常是 XML 文件、Java 注解如 `@Component`, `@Service`, `@Configuration`, `@Bean`，或 Groovy 脚本等）来了解需要创建哪些 Bean，以及它们之间的关系。
+6. **延迟加载 (Lazy Loading) vs. 预实例化 (Eager Instantiation)**：
+   - `BeanFactory` 的默认行为通常是延迟加载 Bean，即只有当第一次请求某个 Bean 时（通过 `getBean()` 方法），它才会被真正实例化和初始化。
+   - 它的一个更常用的子接口 `ApplicationContext` 则通常在容器启动时就预先实例化所有的单例（Singleton）Bean（这是默认作用域）。
+
+**总结一下 `BeanFactory` 的“工厂”角色：**
+
+- 它是一个生产和管理你应用中所有重要对象（Beans）的中央工厂。
+- 你不需要关心这些对象是如何被创建和组装的，只需要从这个“工厂”中获取它们。
+- 它使得你的组件之间解耦，更容易测试和维护。
+
+当你看到 `@Autowired` 注解时，背后就是 `ApplicationContext` (作为 `BeanFactory` 的一个实现) 在工作，它为你找到了合适的 Bean 实例并注入到需要的地方。这就是 Spring 作为 IoC 容器和 Bean 工厂的强大之处。
