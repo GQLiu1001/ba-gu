@@ -533,6 +533,94 @@ Spring利用反射扫描注解，动态“复制”出Bean（复制人），并�
 - **实现**：结合java.lang.reflect.Proxy，通过反射动态生成代理类并调用方法。
 - **例子**：日志拦截器，在方法调用前后用反射插入日志逻辑。
 
+````java
+public class ReflectionDemo {
+
+    public static void main(String[] args) {
+        try {
+            // --- 目标1：模拟 Student s = new Student("小米", 18); ---
+
+            // 步骤 1: 获取 Student 类的 Class 对象。这是反射的入口。
+            //   使用者: java.lang.Class 类 (的静态方法 forName)
+            //   使用方法: Class.forName("类的全限定名")
+            //   作用: JVM根据类名字符串查找并加载对应的类，返回该类的Class对象。
+            System.out.println("反射步骤 1: 获取 Student 类的 Class 对象");
+            Class<?> studentClass = Class.forName("com.example.Student"); // 假设 Student 类在 com.example 包下
+
+            // 步骤 2: 获取 Student 类中参数为 (String, int) 的构造方法。
+            //   使用者: 上一步获取到的 studentClass (Class 对象)
+            //   使用方法: getDeclaredConstructor(Class<?>... parameterTypes)
+            //   作用: 根据指定的参数类型列表查找对应的构造方法。
+            //          (如果构造方法是public的，也可以用 getConstructor)
+            System.out.println("反射步骤 2: 获取 Student 的构造方法 (String, int)");
+            Constructor<?> studentConstructor = studentClass.getDeclaredConstructor(String.class, int.class);
+
+            // 步骤 3: (如果构造方法不是public，比如是private或protected，则需要此步骤) 设置构造方法为可访问。
+            //   使用者: 上一步获取到的 studentConstructor (Constructor 对象)
+            //   使用方法: setAccessible(true)
+            //   作用: 破坏封装，允许访问非public的构造方法。对于public构造方法，此步非必需。
+            //   studentConstructor.setAccessible(true); // 如果构造函数是私有的，取消这行注释
+
+            // 步骤 4: 使用获取到的构造方法创建 Student 类的实例，并传入构造参数 "小米" 和 18。
+            //   使用者: 上一步获取到的 studentConstructor (Constructor 对象)
+            //   使用方法: newInstance(Object... initargs)
+            //   作用: 调用构造方法，创建对象实例。
+            System.out.println("反射步骤 4: 通过构造方法创建 Student 实例");
+            Object studentInstance = studentConstructor.newInstance("小米", 18); // 这就相当于执行了 new Student("小米", 18);
+                                                                               // studentInstance 现在就是反射创建的 Student 对象 s
+
+            // --- 目标2：模拟 String name = s.getName(); ---
+
+            // 步骤 5: 获取 Student 类中的 getName 方法。
+            //   使用者: studentClass (Class 对象) (或者也可以用 studentInstance.getClass() 获取)
+            //   使用方法: getMethod(String name, Class<?>... parameterTypes)
+            //   作用: 根据方法名和参数类型列表查找对应的public方法 (包括从父类继承的)。
+            //          (如果要找非public或仅限本类声明的方法，用 getDeclaredMethod)
+            System.out.println("反射步骤 5: 获取 Student 的 getName 方法");
+            Method getNameMethod = studentClass.getMethod("getName"); // getName() 通常是public且无参数
+
+            // 步骤 6: (如果方法不是public，比如是private或protected，则需要此步骤) 设置方法为可访问。
+            //   使用者: 上一步获取到的 getNameMethod (Method 对象)
+            //   使用方法: setAccessible(true)
+            //   作用: 破坏封装，允许调用非public的方法。对于public方法，此步非必需。
+            //   getNameMethod.setAccessible(true); // 如果getName是私有的，取消这行注释
+
+            // 步骤 7: 调用 studentInstance 对象的 getName 方法。
+            //   使用者: 上一步获取到的 getNameMethod (Method 对象)
+            //   使用方法: invoke(Object obj, Object... args)
+            //   作用: 在指定的对象 obj 上调用此方法，并传入参数 args。
+            //          obj: 要调用哪个对象的该方法 (这里是 studentInstance)
+            //          args: 方法的参数 (getName 无参，所以不传或传空数组/null)
+            System.out.println("反射步骤 7: 调用实例的 getName 方法");
+            Object nameObject = getNameMethod.invoke(studentInstance); // 这就相当于执行了 s.getName();
+                                                                       // nameObject 现在是 getName() 方法的返回值
+
+            // 步骤 8: 将 invoke 方法返回的 Object 类型结果转换为期望的 String 类型。
+            String name = (String) nameObject;
+
+            // 步骤 9: 打印结果验证。
+            System.out.println("反射步骤 9: 打印获取到的名字");
+            System.out.println("通过反射获取到的名字: " + name);
+
+        } catch (ClassNotFoundException e) {
+            System.err.println("错误: 类未找到 - " + e.getMessage());
+        } catch (NoSuchMethodException e) {
+            System.err.println("错误: 方法未找到 - " + e.getMessage());
+        } catch (InstantiationException e) {
+            System.err.println("错误: 实例化失败 - " + e.getMessage());
+        } catch (IllegalAccessException e) {
+            System.err.println("错误: 非法访问 - " + e.getMessage());
+        } catch (InvocationTargetException e) {
+            // 当被调用的方法本身抛出异常时，会封装在 InvocationTargetException 中
+            System.err.println("错误: 调用目标方法时发生异常 - " + e.getTargetException().getMessage());
+        }
+    }
+}
+
+````
+
+
+
 # 注解
 
 ## Java注解的原理

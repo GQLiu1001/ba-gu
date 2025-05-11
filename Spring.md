@@ -4,6 +4,28 @@
 
 ### 说一下你对 Spring 的理解
 
+Spring IoC 意味着**对象的创建和管理由 Spring 容器自动化完成**（基于你的配置和注解）。你通过声明（例如，在类上使用 `@Service` 表明它是一个由 Spring 管理的 Bean），Spring 就会负责实例化这个 Bean。然后，通过 DI（例如使用 `@Autowired`），Spring 会将这些由它管理的 Bean **注入**到其他需要它们的 Bean 中，这样你就**无需手动 `new` 对象来建立它们之间的依赖关系了**。
+
+Spring 的两大特性 IoC 与 AOP ：
+
+- **Spring IoC (控制反转)**：通过注解（如 `@Service`）等声明方式，Spring 自动化地完成对象的创建、配置和生命周期管理。并通过 **DI (依赖注入**，如 `@Autowired`) 将这些被管理的 Bean 注入到需要它们的地方，从而避免了开发者手动 `new` 对象以及管理它们之间复杂的依赖关系。这大大降低了组件间的耦合度。
+- **Spring AOP (面向切面编程)**：在 IoC 管理的 Bean 基础上，Spring AOP 允许开发者以声明式注解（例如 `@Transactional` 进行事务管理，或 `@Async` 实现异步执行）的方式，为这些 Bean 动态地织入如事务、安全、日志等横切关注点的功能。这使得这些通用功能可以从核心业务逻辑中分离出来，提高了代码的模块化和可维护性，同时保持了业务代码的纯净。
+
+IoC与AOP：
+
+在类A的方法a调用b方法和c方法，且类B的方法b有注解，而类C的方法c没有注解时：
+
+- 当Spring IoC容器在**初始化类B这个Bean时**（比如类B上本身有 `@Service` 或通过 `@Bean` 方法定义），如果Spring AOP机制检测到类B的方法（比如方法b）上有AOP相关的注解（如`@Transactional`），那么Spring就会为**整个类B的Bean实例**创建一个动态代理。之后IoC容器管理和提供给其他地方注入的就是这个**类B的代理实例**。这个代理是在Bean B的**初始化阶段**就已经生成了。
+- 而c方法没有注解 SpringIoc就会创建一个正常Bean并维护即IoC容器就创建和管理类C的原始实例。
+- 如果类A通过 `@Autowired` 注入了类B的实例，它实际拿到的就是上述第一点中生成的**类B的代理对象**。所以当方法a调用类B的 `b` 方法时，它是在调用代理对象的 `b` 方法。
+- 当类A调用**代理B的 `b` 方法**时
+  - **首先，AOP的前置增强逻辑会执行**（例如，`@Transactional` 对应的事务开启逻辑）。
+  - **然后，代理对象会去调用原始类B实例中真正的 `b` 方法**，执行核心业务。
+  - **原始 `b` 方法执行完毕后**（无论是正常返回还是抛出异常），**再根据执行结果执行AOP的后置增强逻辑**（例如，如果正常执行，则提交事务；如果抛出需要回滚的异常，则回滚事务；或者执行其他的 `afterReturning`、`afterThrowing`、`after` 通知）。
+- 当方法a调用类C（未被代理）的方法 `c` 时，由于类C没有AOP增强，所以这就是一个直接的、普通的Java方法调用，作用于类C的原始实例。
+
+Spring IoC负责创建和管理所有的Bean（无论是原始实例还是被AOP增强后的代理实例）。如果一个Bean因为其方法上的注解（或其他AOP配置）需要被增强，那么IoC容器在初始化该Bean时，就会通过AOP机制生成一个代理实例，并将这个代理实例作为该Bean对外提供。当调用这个代理实例的方法时，AOP的增强逻辑就会在原始方法执行前后被触发。而对于那些没有AOP增强的Bean，调用它们的方法就是直接调用原始实例的方法。
+
 ![img](https://cdn.xiaolincoding.com//picgo/1712650311366-b499469c-5afd-4be9-bad3-d787de86bf98.png)
 
 Spring框架核心特性包括：
@@ -34,6 +56,8 @@ Spring IoC和AOP 区别：
 
 - 通过 IOC 容器管理对象的依赖关系，然后通过 AOP 将横切关注点统一切入到需要的业务逻辑中。
 - 使用 IOC 容器管理 Service 层和 DAO 层的依赖关系，然后通过 AOP 在 Service 层实现事务管理、日志记录等横切功能，使得业务逻辑更加清晰和可维护。
+
+
 
 ### Spring的aop介绍一下
 
@@ -69,8 +93,8 @@ Spring AOP 是基于 JDK 动态代理和 Cglib 提升实现的，两种代理方
 
 - **反射**：Spring IOC容器利用Java的反射机制动态地加载类、创建对象实例及调用对象方法，反射允许在运行时检查类、方法、属性等信息，从而实现灵活的对象实例化和管理。
 - **依赖注入**：IOC的核心概念是依赖注入，即容器负责管理应用程序组件之间的依赖关系。Spring通过构造函数注入、属性注入或方法注入，将组件之间的依赖关系描述在配置文件中或使用注解。
-- **设计模式 - 工厂模式**：Spring IOC容器通常采用工厂模式来管理对象的创建和生命周期。容器作为工厂负责实例化Bean并管理它们的生命周期，将Bean的实例化过程交给容器来管理。
-- **容器实现**：Spring IOC容器是实现IOC的核心，通常使用BeanFactory或ApplicationContext来管理Bean。BeanFactory是IOC容器的基本形式，提供基本的IOC功能；ApplicationContext是BeanFactory的扩展，并提供更多企业级功能。
+- **设计模式 - 工厂模式**：**Spring IOC容器通常采用工厂模式来管理对象的创建和生命周期**。**容器作为工厂负责实例化Bean并管理它们的生命周期，将Bean的实例化过程交给容器来管理。**
+- **容器实现**：Spring IOC容器是实现IOC的核心，通常使用**BeanFactory或ApplicationContext**来管理Bean。BeanFactory是IOC容器的基本形式，提供基本的IOC功能；ApplicationContext是BeanFactory的扩展，并提供更多企业级功能。
 
 > Spring AOP 实现机制
 
@@ -210,6 +234,12 @@ Java动态代理主要分为两种类型：
 - @Advice：通用的通知类型，可以替代@Before、@After等。
 
 ### 什么是反射？有哪些使用场景？
+
+1. Spring 通过**类路径扫描**等方式找到候选类。
+2. 然后利用**反射**去检查这些类上的注解（以及其他配置信息），根据这些信息创建出Bean的**定义（“蓝图”）**。
+3. 在需要实例化Bean的时候，Spring 根据这个“蓝图”，常常会利用**反射**来调用构造器创建Bean的**实例**。
+4. 创建实例后，再利用**反射**完成**依赖注入**和**生命周期方法的调用**。
+5. 最终，这些创建和组装好的Bean实例被IoC容器**维护**起来（比如单例池），以供应用程序其他部分使用。
 
 反射机制是指程序在运行状态下，对于任意一个类，都能够获取这个类的所有属性和方法；对于任意一个对象，都能够调用它的任意属性和方法。也就是说，Java 反射允许在运行时获取类的信息并动态操作对象，即使在编译时不知道具体的类也能实现。
 
@@ -1323,3 +1353,127 @@ SpringCloud Alibaba实现的微服务架构：
 服务器的资源是有限的，而请求是无限的。在用户使用即并发高峰期，会影响整体服务的性能，严重的话会导致宕机，以至于某些重要服务不可用。故高峰期为了保证核心功能服务的可用性，就需要对某些服务降级处理。可以理解为舍小保大
 
 服务降级是从整个系统的负荷情况出发和考虑的，对某些负荷会比较高的情况，为了预防某些功能（业务场景）出现负荷过载或者响应慢的情况，在其内部暂时舍弃对一些非核心的接口和数据的请求，而直接返回一个提前准备好的fallback（退路）错误处理信息。这样，虽然提供的是一个有损的服务，但却保证了整个系统的稳定性和可用性。
+
+## 反射IoC AOP DI
+
+**Spring 应用启动与Bean生命周期全景图（整合IoC, DI, AOP）**
+
+------
+
+## *整个过程均由Spring IoC（控制反转）容器统一管理和协调，核心在于将对象的创建、依赖关系和生命周期的控制权从应用程序代码转移到容器中。*
+
+**阶段一：IoC容器启动与Bean定义加载注册**
+
+1. **启动IoC容器**：
+   - 一切始于创建一个 `ApplicationContext` 实例（例如 `ClassPathXmlApplicationContext` 或 `AnnotationConfigApplicationContext`）。
+   - **IoC体现**：容器开始接管控制权。
+2. **加载配置元数据**：
+   - 容器根据其类型读取配置信息，以确定如何创建和管理Bean。
+   - **XML配置**：解析XML文件中的`<bean>`定义。
+   - **Java配置**：处理`@Configuration`类及其中的`@Bean`方法。
+   - **注解驱动（核心）**：执行**类路径扫描（Classpath Scanning）**，查找被`@Component`, `@Service`, `@Repository`, `@Controller`等注解标记的类。
+3. **解析和注册BeanDefinition（“蓝图”制作）**：
+   - 对于每一个找到的候选Bean，Spring会为其创建一个`BeanDefinition`对象（Bean的“蓝图”或“配方”）。
+   - **使用的技术（反射）**：当处理注解类或Java配置时，Spring使用**反射**（如 `Class.forName()` 加载类，`aClass.getAnnotations()`、`aClass.getDeclaredMethods()`、`aMethod.getAnnotations()` 等）来读取类、方法、字段上的注解信息及其他元数据（如构造函数、方法签名）。
+   - 这些信息被用来填充`BeanDefinition`，包括Bean的类名、作用域（默认singleton）、是否懒加载、构造函数参数、属性依赖、init/destroy方法名等。
+   - **IoC体现**：容器基于配置和注解构建了管理Bean的详细计划。
+
+------
+
+**阶段二：BeanFactoryPostProcessor执行（“蓝图”修改时机）**
+
+1. 执行BeanFactoryPostProcessor：
+   - 在所有`BeanDefinition`都加载完毕，但任何Bean实例都**还未创建**之前，Spring会调用所有已注册的`BeanFactoryPostProcessor`。
+   - 这些处理器可以读取并修改`BeanDefinition`（例如，修改属性值、添加额外的定义、解析占位符等）。
+   - **AOP的早期介入点**：一些AOP相关的处理器（如处理`@AspectJ`自动代理的）可能会在此阶段分析`BeanDefinition`，标记出哪些Bean将来需要被AOP代理。
+   - **IoC体现**：容器提供了在Bean实例化前修改其定义的扩展点。
+
+------
+
+**阶段三：Bean实例化、属性填充与初始化（IoC、DI与AOP代理创建核心阶段）**
+
+*此阶段是针对每个单例Bean（非懒加载的）在容器启动时依次进行的。*
+
+1. **Bean的实例化（创建原始对象）**：
+
+   - IoC容器根据`BeanDefinition`选择合适的构造函数来创建Bean的**原始实例**。
+   - **使用的技术（反射）**：通常使用`java.lang.reflect.Constructor.newInstance(Object... initArgs)`通过反射调用构造函数。
+   - **IoC体现**：容器负责对象的实际创建。
+   - **DI体现（构造器注入）**：如果Bean使用构造器注入依赖，Spring会先解析构造器参数所依赖的其他Bean，确保它们已被创建（如果需要），然后将这些依赖作为参数通过反射传递给构造函数完成注入。
+
+2. **Bean属性填充（依赖注入DI）**：
+
+   - 在原始对象实例化之后，Spring会处理其属性依赖（主要针对setter注入和字段注入）。
+   - **DI体现**：这是依赖注入的核心步骤之一，将Bean所需的协作对象设置进去。
+   - 使用的技术（反射）：
+     - 对于`@Autowired`、`@Resource`等注解标记的字段或setter方法：
+       - Spring通过**反射**（`Field.getAnnotation()`、`Method.getAnnotation()`）找到这些注入点。
+       - 通过**反射**（`Field.getType()`、`Method.getParameterTypes()`）确定依赖的类型。
+       - 从IoC容器中获取依赖的Bean实例。
+       - 通过**反射**（`Field.setAccessible(true)`后`Field.set()`；或`Method.setAccessible(true)`后`Method.invoke()`）将依赖注入到当前Bean实例的字段或通过setter方法注入。
+
+3. **执行Aware接口方法**：
+
+   - 如果Bean实现了特定的`Aware`接口（如 `BeanNameAware`, `BeanFactoryAware`, `ApplicationContextAware`），Spring会调用这些接口的方法，将相应的容器资源注入给Bean。
+   - **IoC体现**：容器向Bean提供自身环境信息。
+
+4. **BeanPostProcessor的`postProcessBeforeInitialization`方法**：
+
+   - Spring调用所有已注册`BeanPostProcessor`的`postProcessBeforeInitialization`方法。这允许在Bean自定义初始化逻辑执行前对其进行修改或包装。
+   - **IoC体现**：容器提供了初始化前的通用扩展点。
+
+5. **Bean的初始化**：
+
+   - 执行Bean自定义的初始化逻辑。
+   - 使用的技术（反射）：
+     - 如果Bean实现了`InitializingBean`接口，调用其`afterPropertiesSet()`方法。
+     - 如果Bean定义中指定了`init-method`，通过**反射**调用该方法。
+     - 处理`@PostConstruct`注解的方法（通常由`CommonAnnotationBeanPostProcessor`通过**反射**调用）。
+   - **IoC体现**：容器管理Bean的自定义初始化。
+
+6. **BeanPostProcessor的`postProcessAfterInitialization`方法（AOP代理创建的关键点）**：
+
+   - Spring调用所有已注册`BeanPostProcessor`的`postProcessAfterInitialization`方法。
+
+   - AOP体现：这是AOP创建动态代理非常关键的环节。像`AspectJAutoProxyCreator`或`AbstractAutoProxyCreator`这样的`BeanPostProcessor`会在这里工作。如果当前Bean被识别为需要AOP增强（例如，其方法上有`@Transactional`注解，或有切面配置指向它），此处理器通常会
+
+     返回一个该Bean的代理对象（Proxy）来替换原始的Bean实例。
+
+     - 这个代理对象包裹了原始Bean实例，并织入了AOP的增强逻辑（Advice）。
+     - **使用的技术（动态代理）**：JDK动态代理（如果目标对象实现了接口）或CGLIB（如果目标对象没有实现接口，通过继承创建子类代理）。
+
+   - **IoC体现**：容器管理初始化后的通用扩展点，最终存入容器的可能是原始Bean或其AOP代理。
+
+------
+
+**阶段四：Bean注册至单例池，准备就绪**
+
+1. Bean可以使用：
+   - 经过上述所有步骤后，完全初始化好的Bean（可能是原始实例，也可能是AOP代理实例）被放入Spring IoC容器的单例缓存池中（对于单例Bean）。
+   - 此时，Bean就可以被应用程序的其他部分通过依赖注入或`getBean()`方法获取和使用了。
+   - **IoC体现**：容器持有并管理所有准备就绪的Bean。
+
+------
+
+**阶段五：应用运行期间 — AOP的实际执行**
+
+1. 方法调用与AOP增强的执行：
+   - 当应用程序代码通过获取到的Bean实例（如果是被代理的，实际是代理实例）调用其方法时：
+   - AOP体现：
+     - 如果调用的是代理对象的方法，并且该方法匹配了某个切面（Pointcut）：
+       - AOP的增强逻辑（Advice，如事务开启、日志记录、安全检查等）会在原始目标方法**执行前、执行后、环绕执行或抛出异常时**被触发。
+       - 代理对象会负责协调增强逻辑和对原始目标对象方法的调用。
+       - **使用的技术（反射，可选）**：在某些AOP实现或代理内部，调用原始目标对象的方法时，可能依然会用到反射（`Method.invoke()`），但这已经是AOP框架内部的细节。
+     - 如果调用的方法不匹配任何切面，代理通常会直接委托给原始目标对象的方法。
+
+------
+
+**阶段六：容器关闭与Bean的销毁（生命周期结束）**
+
+1. Bean的销毁：
+   - 当`ApplicationContext`关闭时，它会负责销毁其管理的所有Bean（特别是单例Bean）。
+   - 使用的技术（反射）：
+     - 如果Bean实现了`DisposableBean`接口，调用其`destroy()`方法。
+     - 如果Bean定义中指定了`destroy-method`，通过**反射**调用该方法。
+     - 处理`@PreDestroy`注解的方法（通常由`CommonAnnotationBeanPostProcessor`通过**反射**调用）。
+   - **IoC体现**：容器管理Bean从创建到销毁的完整生命周期。
