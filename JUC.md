@@ -1755,6 +1755,115 @@ public class DeadlockExample {
 
 ![null](https://cdn.xiaolincoding.com//picgo/1737006711792-cd31cdf7-f5e3-4091-8fb7-bde2d5f117bc.webp)
 
+### 介绍一下CompletableFuture
+
+`CompletableFuture` 是 Java 8 引入的一个强大的异步编程工具，它扩展了 `Future` 接口的功能，使得异步任务的处理更加灵活和方便。
+
+**核心概念和目的**
+
+`CompletableFuture` 的核心思想是提供一种非阻塞的方式来处理异步计算的结果。传统的 `Future` 在获取结果时通常需要调用 `get()` 方法，而这个方法会阻塞当前线程直到异步计算完成。`CompletableFuture` 通过回调机制解决了这个问题，允许你在异步任务完成时自动执行某些操作，而无需阻塞主线程。
+
+它主要解决了以下问题：
+
+- **避免阻塞：** 通过回调函数，可以在任务完成时自动处理结果或异常，无需手动阻塞等待。
+- **任务编排：** 可以轻松地将多个异步任务串联或并行组合起来，形成复杂的异步处理流水线。
+- **函数式编程风格：** 提供了丰富的函数式方法，如 `thenApply`、`thenAccept`、`thenCompose` 等，使得代码更简洁易读。
+- **显式完成：** 与 `Future` 不同，`CompletableFuture` 可以被显式地完成（即手动设置其结果或异常），这也是其名称的由来。
+
+**主要特点和常用方法**
+
+`CompletableFuture` 提供了大量的方法来满足各种异步编程场景，以下是一些核心和常用的方法：
+
+- **创建异步任务：**
+  - `runAsync(Runnable runnable)`: 异步执行一个不返回结果的任务。
+  - `supplyAsync(Supplier<U> supplier)`: 异步执行一个返回结果的任务。
+  - 这两个方法都有重载版本，可以指定一个 `Executor`（线程池）来执行异步任务，否则默认使用 `ForkJoinPool.commonPool()`。
+- **结果处理（回调）：**
+  - `thenApply(Function<? super T,? extends U> fn)`: 当 `CompletableFuture` 完成时，将其结果作为参数传递给 `fn` 函数，并返回一个新的 `CompletableFuture`，其结果是 `fn` 的返回值。
+  - `thenAccept(Consumer<? super T> action)`: 当 `CompletableFuture` 完成时，将其结果作为参数传递给 `action` 消费，不返回任何结果（返回 `CompletableFuture<Void>`）。
+  - `thenRun(Runnable action)`: 当 `CompletableFuture` 完成时，执行 `action`，不关心上一个任务的结果，也不返回任何结果。
+  - 这些方法通常有对应的 `Async` 版本（如 `thenApplyAsync`），表示回调操作会在另一个线程中异步执行（可以指定线程池）。如果是非 `Async` 版本，回调可能在当前线程或执行上一个任务的线程中执行。
+- **组合多个 `CompletableFuture`：**
+  - `thenCompose(Function<? super T, ? extends CompletionStage<U>> fn)`: 用于将两个异步操作串联起来，当前一个 `CompletableFuture` 完成后，将其结果传递给 `fn`，`fn` 返回一个新的 `CompletableFuture`。这常用于需要前一个异步任务的结果来启动下一个异步任务的场景。
+  - `thenCombine(CompletionStage<? extends U> other, BiFunction<? super T,? super U,? extends V> fn)`: 将两个独立的 `CompletableFuture` 的结果合并。当两个 `CompletableFuture` 都完成时，将它们的结果作为参数传递给 `fn`，并返回一个新的 `CompletableFuture`，其结果是 `fn` 的返回值。
+  - `allOf(CompletableFuture<?>... cfs)`: 返回一个新的 `CompletableFuture<Void>`，它在所有给定的 `CompletableFuture` 都完成时完成。
+  - `anyOf(CompletableFuture<?>... cfs)`: 返回一个新的 `CompletableFuture<Object>`，它在给定的任意一个 `CompletableFuture` 完成时完成，其结果是第一个完成的 `CompletableFuture` 的结果。
+- **异常处理：**
+  - `exceptionally(Function<Throwable, ? extends T> fn)`: 当 `CompletableFuture` 异常完成时，将异常作为参数传递给 `fn` 函数，`fn` 的返回值将作为新的 `CompletableFuture` 的结果。这提供了一种类似 `try-catch` 的异常处理机制。
+  - `whenComplete(BiConsumer<? super T, ? super Throwable> action)`: 当 `CompletableFuture` 完成时（无论正常还是异常），执行 `action`。`action` 会接收结果（如果正常完成）和异常（如果异常完成）。它返回一个新的 `CompletableFuture`，其结果和异常与原始的 `CompletableFuture` 相同。
+- **显式完成：**
+  - `complete(T value)`: 如果 `CompletableFuture` 尚未完成，则将其结果设置为 `value`。
+  - `completeExceptionally(Throwable ex)`: 如果 `CompletableFuture` 尚未完成，则将其设置为异常完成，并抛出 `ex`。
+
+**与传统 `Future` 的比较**
+
+`CompletableFuture` 相较于 `Future` 的主要优势在于：
+
+| 特性           | `Future`                             | `CompletableFuture`                                          |
+| -------------- | ------------------------------------ | ------------------------------------------------------------ |
+| **获取结果**   | 通常通过阻塞的 `get()` 方法获取。    | 可以通过非阻塞的回调机制处理结果，也支持 `get()`（但不推荐）。 |
+| **任务编排**   | 功能非常有限，难以组合多个异步任务。 | 提供了丰富的 API 用于任务的串行、并行组合、选择等。          |
+| **异常处理**   | 异常在调用 `get()` 时抛出。          | 提供了 `exceptionally`、`whenComplete` 等方法进行更灵活的异常处理。 |
+| **显式完成**   | 无法从外部显式完成一个 `Future`。    | 可以通过 `complete()` 或 `completeExceptionally()` 方法从外部完成。 |
+| **回调支持**   | 不直接支持回调。                     | 核心特性之一，可以在任务完成时自动触发后续操作。             |
+| **函数式编程** | API 设计不符合现代函数式编程风格。   | 大量使用函数式接口，使得代码更简洁、易于理解和组合。         |
+
+````java
+    //线程池执行器
+	@Bean
+    public ThreadPoolExecutor threadPoolExecutor() {
+
+        //动态获取服务器核数
+        int processors = Runtime.getRuntime().availableProcessors();
+        //Runtime.getRuntime(): 获取当前的Java运行时环境。
+        //availableProcessors(): 返回Java虚拟机（JVM）可用的处理器核心数。这个数字通常等于操作系统的物理核心数或超线程环境下的逻辑核心数。
+        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+                processors+1, // 核心线程个数 io:2n ,cpu: n+1  n:内核数据
+                //CPU密集型任务 (cpu: n+1): 对于主要进行计算、消耗CPU资源的任务，通常建议将线程数设置为 N+1 或 N（N是CPU核心数）。N+1 的好处是即使有一个线程因为页错误或其他原因偶尔阻塞，CPU也能保持忙碌。你的代码采纳了这个策略。
+                //I/O密集型任务 (io:2n): 对于主要进行I/O操作（如网络请求、文件读写）的任务，线程大部分时间在等待I/O完成，CPU是空闲的。因此可以设置更多的线程，比如 2N，以充分利用CPU。你的代码没有直接使用2n作为核心线程数，而是选择了n+1。
+                processors+1,//最大线程数
+                0,//线程空闲存活时间。当线程池中的线程数量超过corePoolSize时，如果一个线程的空闲时间达到了keepAliveTime，那么多余的空闲线程将被终止，直到线程数回落到corePoolSize。
+                TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(3),//这是一个有界阻塞队列，基于数组实现，容量为3。这意味着这个队列最多只能存放3个等待执行的任务。
+                Executors.defaultThreadFactory(),//线程工厂。用于创建新线程。Executors.defaultThreadFactory()会创建普通的、非守护（non-daemon）线程，并为它们设置一个标准的名称（如 pool-X-thread-Y）。
+                new ThreadPoolExecutor.AbortPolicy()//拒绝策略（饱和策略）。当线程池和工作队列都满了（即无法再接收新任务）时，如何处理新提交的任务
+            //ThreadPoolExecutor.AbortPolicy(): 这是默认的拒绝策略。它会直接抛出RejectedExecutionException运行时异常，从而中断调用者的执行。
+        );
+        return threadPoolExecutor;
+
+    }
+````
+
+````java
+        //定义多线程方法
+		CompletableFuture<X> future1 = CompletableFuture.supplyAsync(() -> {
+            ......
+            return X;
+        });
+        CompletableFuture<Y> future2 = CompletableFuture.supplyAsync(() -> {
+            ......
+            return Y;
+        });
+        CompletableFuture<Z> future2 = CompletableFuture.supplyAsync(() -> {
+            ......
+            return Z;
+        });
+		//开启多线程任务
+		CompletableFuture.allOf(
+            future1,
+            future2,
+            future3
+        ).join();
+````
+
+### CPU/IO密集型
+
+**CPU密集型 (CPU-Bound)**: 任务大部分时间都在进行计算，几乎不怎么等待外部资源（如磁盘、网络）。CPU利用率高。 一般n+1线程
+
+**I/O密集型 (I/O-Bound)**: 任务大部分时间都在等待I/O操作完成（例如，读取文件、发送网络请求）。CPU在等待期间是空闲的。 一般2n线程
+
+
+
 ## 线程池
 
 ### 介绍一下线程池的工作原理
