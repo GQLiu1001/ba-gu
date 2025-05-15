@@ -28,7 +28,7 @@ Java的线程安全在三个方面体现：
 
 > 1.继承Thread类
 
-这是最直接的一种方式，用户自定义类继承java.lang.Thread类，**重写其run()方法**，run()方法中定义了线程执行的具体任务。创建该类的实例后，通过调用start()方法启动线程。
+这是最直接的一种方式，用户自定义类继承java.lang.Thread类，**重写其run()方法**，run()方法中定义了线程执行的具体任务。创建该类的实例后，通过调用start()方法启动线程。（因为java是单继承 如果采取继承Thread类会占继承位 Thread类其实也是实现了Runnable接口）
 
 ```java
 class MyThread extends Thread {
@@ -51,7 +51,7 @@ public static void main(String[] args) {
 
 > 2.实现Runnable接口
 
-**如果一个类已经继承了其他类，就不能再继承Thread类，此时可以实现java.lang.Runnable接口。**实现Runnable接口需要**重写run()方法**，然后将此Runnable对象作为参数传递给Thread类的构造器，创建Thread对象后调用其start()方法启动线程。
+**如果一个类已经继承了其他类，就不能再继承Thread类，此时可以实现java.lang.Runnable接口。**实现Runnable接口需要**重写run()方法**，然后将此Runnable对象作为参数传递给Thread类的构造器，创建Thread对象后调用其start()方法启动线程。Runnable接口是函数式接口 只有一个run方法 可以用lambda表达式
 
 ```java
 class MyRunnable implements Runnable {
@@ -63,6 +63,7 @@ class MyRunnable implements Runnable {
 
 public static void main(String[] args) {
     Thread t = new Thread(new MyRunnable());
+    Thread f = new Thread(() -> sout."hello")
     t.start();
 }
 ```
@@ -74,7 +75,7 @@ public static void main(String[] args) {
 
 > 3. 实现Callable接口与FutureTask
 
-java.util.concurrent.Callable接口类似于Runnable，但**Callable的call()方法可以有返回值并且可以抛出异常**。要执行Callable任务，需将它**包装进一个FutureTask**，因为Thread类的构造器只接受Runnable参数，而FutureTask实现了Runnable接口。
+java.util.concurrent.Callable接口类似于Runnable，但**Callable的call()方法可以有返回值并且可以抛出异常**。要执行Callable任务，需将它**包装进一个FutureTask**，因为**Thread类的构造器只接受Runnable参数**，而FutureTask实现了Runnable接口。
 
 ```java
 class MyCallable implements Callable<Integer> {
@@ -109,6 +110,8 @@ public static void main(String[] args) {
 
 从Java 5开始引入的java.util.concurrent.ExecutorService和相关类提供了线程池的支持，这是一种更高效的线程管理方式，避免了频繁创建和销毁线程的开销。可以通过Executors类的静态方法创建不同类型的线程池。
 
+创建一个ExecutorService时 返回中有一个属性是 `new LinkedBlockingQueue<Runnable>()` 是一个无界阻塞队列 任务过多会不断加入队列中 JVM可能OOM
+
 ```java
 class Task implements Runnable {
     @Override
@@ -130,6 +133,28 @@ public static void main(String[] args) {
 
 - 缺点：程池增加了程序的复杂度，特别是当涉及线程池参数调整和故障排查时。错误的配置可能导致死锁、资源耗尽等问题，这些问题的诊断和修复可能较为复杂。
 - 优点：线程池可以重用预先创建的线程，避免了线程创建和销毁的开销，显著提高了程序的性能。对于需要快速响应的并发请求，线程池可以迅速提供线程来处理任务，减少等待时间。并且，线程池能够有效控制运行的线程数量，防止因创建过多线程导致的系统资源耗尽（如内存溢出）。通过合理配置线程池大小，可以最大化CPU利用率和系统吞吐量。
+
+### 线程池的五种状态
+
+1. running
+
+线程池正常运行 既能接受新任务 也会处理队列中的任务
+
+2. shutdown
+
+调用线程池的shutdown()方法 线程池进入shutdown状态 不会接受新任务 但是会完成队列中的任务
+
+3. stop
+
+调用线程池的shutdownnow()方法 线程池进入stop状态 不会接受新任务 也不会完成队列中的任务 正在运行的线程也会被中断
+
+4. tidying
+
+没有线程运行的状态 线程池内部会调用terminated() 这个是空方法 可以自定义
+
+5. terminated
+
+terminated()方法调用后线程池状态
 
 ### 怎么启动线程 ？
 
@@ -859,11 +884,13 @@ int value = threadLocalVar.get();
 
 Java中的锁是用于管理多线程并发访问共享资源的关键机制。锁可以确保在任意给定时间内只有一个线程可以访问特定的资源，从而避免数据竞争和不一致性。Java提供了多种锁机制，可以分为以下几类：
 
-- **内置锁（synchronized）**：Java中的`synchronized`关键字是内置锁机制的基础，可以用于方法或代码块。当一个线程进入`synchronized`代码块或方法时，它会获取关联对象的锁；当线程离开该代码块或方法时，锁会被释放。如果其他线程尝试获取同一个对象的锁，它们将被阻塞，直到锁被释放。其中，syncronized加锁时有无锁、偏向锁、轻量级锁和重量级锁几个级别。偏向锁用于当一个线程进入同步块时，如果没有任何其他线程竞争，就会使用偏向锁，以减少锁的开销。轻量级锁使用线程栈上的数据结构，避免了操作系统级别的锁。重量级锁则涉及操作系统级的互斥锁。
-- **ReentrantLock**：`java.util.concurrent.locks.ReentrantLock`是一个显式的锁类，提供了比`synchronized`更高级的功能，如可中断的锁等待、定时锁等待、公平锁选项等。`ReentrantLock`使用`lock()`和`unlock()`方法来获取和释放锁。其中，公平锁按照线程请求锁的顺序来分配锁，保证了锁分配的公平性，但可能增加锁的等待时间。非公平锁不保证锁分配的顺序，可以减少锁的竞争，提高性能，但可能造成某些线程的饥饿。
+- **内置锁（synchronized）**：Java中的`synchronized`**关键字**是内置锁机制的基础，可以用于方法或代码块。当一个线程进入`synchronized`代码块或方法时，它会获取关联对象的锁；当线程离开该代码块或方法时，锁会被释放。如果其他线程尝试获取同一个对象的锁，它们将被阻塞，直到锁被释放。其中，syncronized加锁时有无锁、偏向锁、轻量级锁和重量级锁几个级别。偏向锁用于当一个线程进入同步块时，如果没有任何其他线程竞争，就会使用偏向锁，以减少锁的开销。轻量级锁使用线程栈上的数据结构，避免了操作系统级别的锁。重量级锁则涉及操作系统级的互斥锁。
+- **ReentrantLock**：`java.util.concurrent.locks.ReentrantLock`是一个显式的锁**类**，提供了比`synchronized`更高级的功能，如可中断的锁等待、定时锁等待、公平锁选项等。`ReentrantLock`使用`lock()`和`unlock()`方法来获取和释放锁。其中，公平锁按照线程请求锁的顺序来分配锁，保证了锁分配的公平性，但可能增加锁的等待时间。非公平锁不保证锁分配的顺序，可以减少锁的竞争，提高性能，但可能造成某些线程的饥饿。
 - **读写锁（ReadWriteLock）**：`java.util.concurrent.locks.ReadWriteLock`接口定义了一种锁，允许多个读取者同时访问共享资源，但只允许一个写入者。读写锁通常用于读取远多于写入的情况，以提高并发性。
 - **乐观锁和悲观锁**：悲观锁（Pessimistic Locking）通常指在访问数据前就锁定资源，假设最坏的情况，即数据很可能被其他线程修改。`synchronized`和`ReentrantLock`都是悲观锁的例子。乐观锁（Optimistic Locking）通常不锁定资源，而是在更新数据时检查数据是否已被其他线程修改。乐观锁常使用版本号或时间戳来实现。
 - **自旋锁**：自旋锁是一种锁机制，线程在等待锁时会持续循环检查锁是否可用，而不是放弃CPU并阻塞。通常可以使用CAS来实现。这在锁等待时间很短的情况下可以提高性能，但过度自旋会浪费CPU资源。
+
+
 
 ### 怎么在实践中用锁的？
 
@@ -1295,10 +1322,14 @@ synchronized底层是利用计算机系统mutex Lock实现的。每一个可重�
 
 synchronized 核心优化方案主要包含以下 4 个：
 
-- **锁膨胀**：synchronized 从无锁升级到偏向锁，再到轻量级锁，最后到重量级锁的过程，它叫做锁膨胀也叫做锁升级。JDK 1.6 之前，synchronized 是重量级锁，也就是说 synchronized 在释放和获取锁时都会从用户态转换成内核态，而转换的效率是比较低的。但有了锁膨胀机制之后，synchronized 的状态就多了无锁、偏向锁以及轻量级锁了，这时候在进行并发操作时，大部分的场景都不需要用户态到内核态的转换了，这样就大幅的提升了 synchronized 的性能。
+- **锁膨胀**：synchronized 从无锁升级到偏向锁，再到轻量级锁，最后到重量级锁的过程，它叫做锁膨胀也叫做锁升级。JDK 1.6 之前，synchronized 是重量级锁，也就是说 synchronized 在释放和获取锁时都会从用户态转换成内核态，而转换的效率是比较低的。但有了锁膨胀机制之后synchronized 的状态就多了无锁、偏向锁以及轻量级锁了，这时候在进行并发操作时，大部分的场景都不需要用户态到内核态的转换了，这样就大幅的提升了 synchronized 的性能。
 - **锁消除**：指的是在某些情况下，JVM 虚拟机如果检测不到某段代码被共享和竞争的可能性，就会将这段代码所属的同步锁消除掉，从而到底提高程序性能的目的。
 - **锁粗化**：将多个连续的加锁、解锁操作连接在一起，扩展成一个范围更大的锁。
 - **自适应自旋锁**：指通过自身循环，尝试获取锁的一种方式，优点在于它避免一些线程的挂起和恢复操作，因为挂起线程和恢复线程都需要从用户态转入内核态，这个过程是比较慢的，所以通过自旋的方式可以一定程度上避免线程挂起和恢复所造成的性能开销。
+
+### synchronized锁升级
+
+对象在初始时处于**无锁状态**；当第一个线程访问同步块时，锁会升级为**偏向锁**，将线程ID记录在对象头（Mark Word），使得该线程后续重入同步块时几乎没有额外开销。一旦出现其他线程尝试获取该偏向锁，偏向锁状态会撤销，锁升级为**轻量级锁**；此时，尝试获取锁的线程会通过CAS（比较并交换）操作将对象头指向其栈帧中的锁记录，若CAS失败，表明存在竞争，线程会进行短暂的自旋等待，这适用于竞争不激烈、锁持有时间短的场景。如果自旋一定次数后仍无法获取锁，或者有更多线程加入竞争，轻量级锁便会膨胀为**重量级锁**，对象头将指向操作系统层面的监视器（Monitor），未能获取锁的线程会被阻塞并进入等待队列（涉及用户态到内核态的切换），虽然单次获取和释放的成本变高，但这在高并发、高竞争环境下能有效避免CPU空转，从而提高整体系统吞吐量。
 
 ### 介绍一下AQS
 

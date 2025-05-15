@@ -113,6 +113,174 @@ C：面向过程的语言，强调函数和步骤化编程。手动管理内存�
 
 Java：面向对象的语言（OOP），强调类、对象、继承、多态等概念（尽管也支持部分函数式特性）。自动垃圾回收（GC），开发者无需手动释放内存，安全性更高，但可能牺牲部分性能。编译为字节码（`.class` 文件），通过 JVM（Java 虚拟机）运行，实现“一次编写，到处运行”。因 JVM 和垃圾回收有一定开销，性能通常低于 C，但 JIT 编译器优化后差距缩小。
 
+## Java中super和this关键字
+
+`this` 关键字
+
+`this` 关键字是对**当前对象实例**的引用。也就是说，`this` 指向调用该方法或构造器的那个对象。
+
+**主要用途：**
+
+1. **区分成员变量和局部变量（或方法参数）：** 当成员变量名和局部变量名（或方法参数名）相同时，可以使用 `this.` 来明确指代成员变量。
+
+   ```java
+   public class MyClass {
+       private int value;
+   
+       public MyClass(int value) {
+           this.value = value; // this.value 是成员变量, value 是构造器参数
+       }
+   
+       public void setValue(int value) {
+           this.value = value; // this.value 是成员变量, value 是方法参数
+       }
+   
+       public int getValue() {
+           return this.value; // 或者直接 return value; (如果无歧义)
+       }
+   }
+   ```
+
+2. **在构造器中调用同一个类的其他构造器：** 使用 `this(...)` 形式，并且这句调用必须是构造器中的第一条语句。这有助于减少构造器之间的代码重复。
+
+```java
+    public class Rectangle {  
+        
+        private int width; 
+        
+        private int height;
+        
+    public Rectangle(int width, int height) {
+        this.width = width;
+        this.height = height;
+    }
+
+    public Rectangle(int side) {
+        this(side, side); // 调用上面的 Rectangle(int, int) 构造器
+    }
+
+    public Rectangle() {
+        this(1, 1); // 调用 Rectangle(int, int) 构造器，创建一个1x1的矩形
+    }
+}
+```
+
+3. **返回当前类的实例（链式调用）：** 在某些设计模式（如构建者模式）中，方法可以返回 `this`，以允许链式方法调用。
+
+```java
+public class PizzaBuilder {
+    private String toppings = "";
+
+    public PizzaBuilder addTopping(String topping) {
+        this.toppings += topping + " ";
+        return this; // 返回当前对象，允许链式调用
+    }
+
+    public String build() {
+        return "Pizza with: " + toppings.trim();
+    }
+
+    public static void main(String[] args) {
+        String pizza = new PizzaBuilder()
+                          .addTopping("Mushroom")
+                          .addTopping("Pepperoni")
+                          .build();
+        System.out.println(pizza); // 输出: Pizza with: Mushroom Pepperoni
+    }
+}
+```
+
+4. **将当前对象作为参数传递给另一个方法。**
+
+```java
+public class EventSource {
+    public void registerListener(EventListener listener) {
+        listener.onEvent(this); // 将当前 EventSource 实例传递给监听器
+    }
+}
+
+interface EventListener {
+    void onEvent(EventSource source);
+}
+```
+
+**要点：**
+
+- `this` 不能在静态方法或静态代码块中使用，因为静态成员不属于任何特定的对象实例。
+
+`super` 关键字
+
+`super` 关键字是对**当前对象的直接父类实例**的引用。它用于从子类中访问父类的成员（字段、方法）或调用父类的构造器。
+
+**主要用途：**
+
+1. **调用父类的构造器：** 使用 `super(...)` 形式，并且这句调用必须是子类构造器中的第一条语句。如果子类构造器中没有显式调用 `super(...)`，并且父类有无参构造器，编译器会自动插入对父类无参构造器的调用 `super()`。如果父类没有无参构造器，则子类构造器必须显式调用父类的某个有参构造器。
+
+   ```java
+   class Animal {
+       String name;
+       Animal(String name) {
+           this.name = name;
+           System.out.println("Animal constructor called: " + name);
+       }
+   }
+   
+   class Dog extends Animal {
+       String breed;
+       Dog(String name, String breed) {
+           super(name); // 必须是第一句，调用父类 Animal 的构造器
+           this.breed = breed;
+           System.out.println("Dog constructor called: " + breed);
+       }
+   }
+   ```
+
+2. **访问父类中被子类覆盖（Override）的方法：** 如果子类重写了父类的方法，可以使用 `super.methodName()` 来调用父类中被覆盖的那个版本的方法。
+
+```
+class Vehicle { public void start() { System.out.println("Vehicle is starting."); } }
+class Car extends Vehicle {
+    @Override
+    public void start() {
+        super.start(); // 调用父类 Vehicle 的 start() 方法
+        System.out.println("Car is starting with an engine sound.");
+    }
+}
+```
+
+3. **访问父类中被子类隐藏（Hide）的字段：** 虽然不推荐（通常建议通过方法访问字段），但如果子类定义了与父类同名的字段，可以使用 `super.fieldName` 来访问父类的字段。
+
+```java
+class Parent {
+    String message = "Hello from Parent";
+}
+
+class Child extends Parent {
+    String message = "Hello from Child";
+
+    public void printMessages() {
+        System.out.println(this.message); // 输出: Hello from Child
+        System.out.println(super.message); // 输出: Hello from Parent
+    }
+}
+```
+
+**要点：**
+
+- `super` 也不能在静态方法或静态代码块中使用，因为它引用的是父类的实例部分。
+- `super` 总是指向直接父类。
+
+`this` 与 `super` 的主要区别总结
+
+| 特性             | `this`                                                 | `super`                                            |
+| ---------------- | ------------------------------------------------------ | -------------------------------------------------- |
+| **指代对象**     | 当前类的实例                                           | 当前对象的直接父类实例                             |
+| **调用构造器**   | `this(...)`：调用本类中其他构造器                      | `super(...)`：调用直接父类的构造器                 |
+| **调用方法**     | `this.method()`：调用本类的方法（通常 `this.` 可省略） | `super.method()`：调用父类中被覆盖或未被覆盖的方法 |
+| **访问字段**     | `this.field`：访问本类的字段（通常 `this.` 可省略）    | `super.field`：访问父类中被隐藏或未被隐藏的字段    |
+| **继承关系**     | 不需要继承关系即可使用                                 | 必须在有继承关系的子类中使用                       |
+| **构造器中位置** | `this(...)` 必须是构造器第一句                         | `super(...)` 必须是构造器第一句                    |
+
 ## Java数据类型
 
 ![img](https://cdn.nlark.com/yuque/0/2025/jpeg/50462032/1743487141758-cbf6f325-8be7-4cd8-9629-99878c9b8cc3.jpeg)
@@ -133,7 +301,7 @@ Java：面向对象的语言（OOP），强调类、对象、继承、多态等�
 | 并行数组排序     | 利用多核 CPU 加速数组排序                               | `Arrays.parallelSort(array);`                                |
 | Base64 支持      | 提供标准的 Base64 编码和解码工具                        | `Base64.getEncoder().encodeToString("text".getBytes());`     |
 
-### 说明
+说明
 
 - 这个表格涵盖了 Java 8 的主要新特性，示例代码是简化的片段，实际使用时可能需要更多上下文。
 - 如果你需要更详细的说明或针对某个特性扩展表格内容，可以告诉我！
@@ -403,13 +571,37 @@ public class IntegerCacheTest {
 4. 支持编译时检查。
 5. 代码更具可读性和设计意图。
 
+## java泛型中extends和super的区别
+
+在Java泛型中，`extends` 和 `super` 是两种通配符（wildcards）的边界限定，它们用于在泛型参数中指定类型的上界或下界，从而增加代码的灵活性和类型安全性。它们的核心区别在于对泛型集合或泛型类的**读取和写入能力**的影响。
+
+一个简单好记的原则是 **PECS (Producer Extends, Consumer Super)**：
+
+- **Producer Extends (生产者使用 `extends`)**: 如果你的泛型集合主要用于**读取/提供数据**（作为生产者），那么使用 `<? extends T>`。
+- **Consumer Super (消费者使用 `super`)**: 如果你的泛型集合主要用于**写入/接收数据**（作为消费者），那么使用 `<? super T>`。
+
+`<? extends T>` (上界通配符 - Upper Bounded Wildcard) 包括T在内的任何T的子类
+
+`<? super T>` (下界通配符 - Lower Bounded Wildcard) 包括T在内的任何T的父类
+
+**核心区别概览：**
+
+| 特性               | `<? extends T>` (上界)                    | `<? super T>` (下界)                        |
+| ------------------ | ----------------------------------------- | ------------------------------------------- |
+| **含义**           | `T` 或 `T` 的子类                         | `T` 或 `T` 的父类                           |
+| **读取 (Get)**     | 安全，得到 `T` 类型 (或其父类)            | 不太有用，只能安全地得到 `Object` 类型      |
+| **写入 (Add/Put)** | **不安全** (只能加 `null`)                | **安全**，可以加入 `T` 或 `T` 的子类实例    |
+| **PECS原则**       | **Producer** (生产者，提供数据，从中读取) | **Consumer** (消费者，消耗数据，向其中写入) |
+
+
+
 ## Java的异常
 
 Java 异常（Exception）是程序运行时发生的错误或意外情况，用于处理非正常执行流程。以下是简要介绍：
 
 ![img](https://cdn.nlark.com/yuque/0/2025/webp/50462032/1744269216054-eb849342-ac39-4c13-8d92-3d89ba6a423d.webp)
 
-### **异常的分类**
+**异常的分类**
 
 Java 中的异常都继承自 Throwable 类，分为两类：
 
@@ -427,7 +619,7 @@ Throwable
     └── 其他受检异常（如 IOException、SQLException）
 ```
 
-### **异常处理机制**
+**异常处理机制**
 
 Java 使用 try-catch-finally 块处理异常：
 
@@ -443,9 +635,49 @@ Java 使用 try-catch-finally 块处理异常：
 
 另一种常见情况是，在方法内部捕获了可能抛出的异常，并在方法内部处理它们，而不是通过throws子句将它们传递到调用者。这种情况下，方法可以处理异常而无需在方法签名中使用throws。
 
-### **自定义异常**
+**自定义异常**
 
 可以通过继承 Exception 或 RuntimeException 创建自定义异常
+
+## Java中 String StringBuilder StringBuffer 的区别
+
+**`String` (字符串常量)**
+
+- **不可变性 (Immutable)**：一旦 `String` 对象被创建，它的值就不能被改变。任何对 `String` 对象的修改（如拼接、替换）都会导致创建一个新的 `String` 对象。
+- **线程安全 (Thread-safe)**：由于其不可变性，`String` 对象是线程安全的。多个线程可以同时访问同一个 `String` 对象而不会产生问题。
+- **性能**：对于频繁修改字符串内容的场景，性能较差，因为每次修改都会创建新对象，产生较多的内存开销和垃圾回收压力。但对于无需修改的字符串，或者少量拼接（编译器可能会优化为 `StringBuilder`），它是高效的。
+- **存储**：字符串常量池（String Pool）可以帮助节省内存，对于字面量相同的字符串，会指向同一个对象。
+
+**`StringBuilder` (字符串变量 - 非线程安全)**
+
+- **可变性 (Mutable)**：`StringBuilder` 对象的值可以被修改（如 `append()`、`insert()`、`delete()` 等方法），而不会创建新的对象。它内部维护一个可变的字符数组。
+- **线程安全 (Not thread-safe)**：`StringBuilder` 的方法不是同步的，因此在多线程环境下共享同一个 `StringBuilder` 对象进行修改是不安全的，可能会导致数据不一致。
+- **性能**：在单线程环境下进行频繁的字符串修改操作时，性能最高。因为它直接在原有的字符数组上操作（如果空间足够），避免了创建新对象的开销。
+- **适用场景**：单线程环境下，需要频繁拼接或修改字符串内容的场景。例如，在方法内部构建一个复杂的字符串。它是 Java 5 中引入的，主要目的是作为 `StringBuffer` 的一个非线程安全但更快的替代品。
+
+**`StringBuffer` (字符串变量 - 线程安全)**
+
+- **可变性 (Mutable)**：与 `StringBuilder` 类似，`StringBuffer` 对象的值也是可以修改的。
+- **线程安全 (Thread-safe)**：`StringBuffer` 的大多数公开方法（如 `append()`、`insert()`、`delete()`）都使用了 `synchronized` 关键字进行同步，因此它是线程安全的。多个线程可以安全地共享同一个 `StringBuffer` 对象并进行修改。
+- **性能**：由于同步操作会带来额外的开销，所以在单线程环境下，其性能通常低于 `StringBuilder`。但在多线程环境下，如果需要保证操作的原子性，它是一个安全的选择。
+- **适用场景**：多线程环境下，需要共享一个可变字符串并进行修改的场景。它是 Java 早期版本就存在的类。
+
+**总结区别：**
+
+| 特性                | `String`                                     | `StringBuilder`              | `StringBuffer`                         |
+| ------------------- | -------------------------------------------- | ---------------------------- | -------------------------------------- |
+| **可变性**          | 不可变 (Immutable)                           | 可变 (Mutable)               | 可变 (Mutable)                         |
+| **线程安全性**      | 线程安全 (因其不可变)                        | 非线程安全 (Not thread-safe) | 线程安全 (Synchronized methods)        |
+| **性能 (修改操作)** | 差 (每次创建新对象)                          | 高 (直接修改，单线程)        | 中等 (因同步开销，低于`StringBuilder`) |
+| **主要用途**        | 表示不需要改变的字符串，字符串常量，哈希键等 | 单线程下频繁修改字符串       | 多线程下频繁修改字符串                 |
+| **引入版本**        | JDK 1.0                                      | JDK 1.5                      | JDK 1.0                                |
+
+## 深拷贝和浅拷贝
+
+都是指对象的拷贝 一个对象中存在两种类型的属性 一种是基本数据类型 一种是实例对象的引用
+
+1. 浅拷贝：只会拷贝基本数据类型的值 以及实例对象的引用地址 并不会复制一份引用地址指向的对象。浅拷贝出来的对象，内部的类属性指向的是同一个对象
+2. 深拷贝：完全复制一个新的对象
 
 # 反射
 
@@ -651,7 +883,7 @@ Java 注解的作用域由 @Retention 决定生命周期（SOURCE 仅源代码�
 
 ## == 与 equals 有什么区别
 
-### **==**
+**==**
 
 - **作用**：比较两个操作数的**引用**（对于基本类型则是值）。
 - **适用范围**： 
@@ -663,7 +895,7 @@ Java 注解的作用域由 @Retention 决定生命周期（SOURCE 仅源代码�
 
 比较的是两个字符串内存地址（堆内存）的数值是否相等，属于数值比较；
 
-### **equals**
+**equals**
 
 - **作用**：比较两个对象的**内容**是否相等。
 - **适用范围**：仅用于对象（引用类型）。
@@ -681,7 +913,7 @@ Java 注解的作用域由 @Retention 决定生命周期（SOURCE 仅源代码�
 - **equals**：比较两个对象是否“相等”，默认比较引用，可被重写以比较内容。
 - **hashCode**：返回对象的哈希码（一个整数），用于快速定位对象，默认基于内存地址，可被重写。
 
-### 契约关系
+契约关系
 
 Java 规范规定 hashCode 和 equals 必须满足以下契约：
 
@@ -700,14 +932,14 @@ System.out.println(s1.hashCode() == s2.hashCode()); // true
 
 s1 和 s2 内容相等，equals 返回 true，它们的 hashCode 也必须相同（**String 类已重写**）。
 
-### 实际作用
+实际作用
 
 - **equals**：判断两个对象在逻辑上是否相同。
 - **hashCode**：优化哈希表性能，先用哈希码定位桶（bucket），再用 equals 精确比较。
 - **关系示例**： 
 - 在 HashMap 中，查找键时先用 hashCode 确定位置，再用 equals 确认是否匹配。
 
-### **默认实现**
+**默认实现**
 
 - Object 类中： 
 
@@ -716,11 +948,11 @@ s1 和 s2 内容相等，equals 返回 true，它们的 hashCode 也必须相同
 
 - 如果不重写，两个内容相同但引用不同的对象会有不同 hashCode，不满足一致性。
 
-### **重写规则**
+**重写规则**
 
 - **必须同时重写**：如果重写了 equals（如比较对象内容），必须重写 hashCode，确保契约成立。
 
-### **违反契约的后果**
+**违反契约的后果**
 
 - 只重写 equals 不重写 hashCode： 
 
